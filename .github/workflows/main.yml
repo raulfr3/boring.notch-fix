@@ -11,13 +11,15 @@ jobs:
     steps:
       - name: 1. Download your modified code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 2. Inject the unreleased Swipe Gestures
         run: |
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
           git fetch https://github.com/TheBoredTeam/boring.notch.git pull/1100/head:gestures
-          git merge gestures --no-edit
+          git merge gestures --allow-unrelated-histories --no-edit
           
       - name: 3. Compile the App
         run: xcodebuild -project boringNotch.xcodeproj -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -derivedDataPath build_output clean build
