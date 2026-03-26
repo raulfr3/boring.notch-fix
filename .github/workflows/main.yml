@@ -18,7 +18,7 @@ jobs:
       - name: 2. Inject your Tweaks
         shell: python
         run: |
-          # 1. Update MusicManager
+          # 1. Update MusicManager Safely
           mm_path = "boringNotch/managers/MusicManager.swift"
           with open(mm_path, "r") as file:
               mm_code = file.read()
@@ -31,15 +31,14 @@ jobs:
           with open(mm_path, "w") as file:
               file.write(mm_code)
               
-          # 2. Update SettingsView
+          # 2. Update SettingsView Safely
           sv_path = "boringNotch/components/Settings/SettingsView.swift"
           with open(sv_path, "r") as file:
               sv_code = file.read()
               
-          sv_code = sv_code.replace(
-              'Text("\\(waitInterval, specifier: "%.0f") sec")',
-              '(waitInterval == 0 ? Text("Never") : Text("\\(waitInterval, specifier: "%.0f") sec"))'
-          )
+          old_text = 'Text("\\(waitInterval, specifier: "%.0f") sec")'
+          new_text = 'Group { if waitInterval == 0 { Text("Never") } else { Text("\\(waitInterval, specifier: "%.0f") sec") } }'
+          sv_code = sv_code.replace(old_text, new_text)
           
           with open(sv_path, "w") as file:
               file.write(sv_code)
