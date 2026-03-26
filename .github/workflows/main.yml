@@ -1,0 +1,34 @@
+name: Cloud Mac Builder
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: 1. Download your modified code
+        uses: actions/checkout@v4
+
+      - name: 2. Inject the unreleased Swipe Gestures
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git fetch https://github.com/TheBoredTeam/boring.notch.git pull/1100/head:gestures
+          git merge gestures --no-edit
+          
+      - name: 3. Compile the App
+        run: xcodebuild -project boringNotch.xcodeproj -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -derivedDataPath build_output clean build
+          
+      - name: 4. Zip the App
+        run: |
+          cd build_output/Build/Products/Release
+          zip -r BoringNotch-Custom.zip boringNotch.app
+
+      - name: 5. Upload to you
+        uses: actions/upload-artifact@v4
+        with:
+          name: BoringNotch-Custom
+          path: build_output/Build/Products/Release/BoringNotch-Custom.zip
