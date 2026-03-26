@@ -651,14 +651,19 @@ struct Media: View {
                     }
                 }
                 HStack {
-                    Stepper(value: $waitInterval, in: 0...10, step: 1) {
-                        HStack {
-                            Text("Media inactivity timeout")
-                            Spacer()
-                            Text("\(Defaults[.waitInterval], specifier: "%.0f") seconds")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                 Stepper(value: $waitInterval, in: 0...10, step: 1) {
+    HStack {
+        Text("Media inactivity timeout")
+        Spacer()
+        if waitInterval == 0 {
+            Text("Never")
+                .foregroundStyle(.secondary)
+        } else {
+            Text("\(waitInterval, specifier: "%.0f") sec")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
                 }
                 Picker(
                     selection: $hideNotchOption,

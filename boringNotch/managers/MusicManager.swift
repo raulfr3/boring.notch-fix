@@ -543,6 +543,7 @@ class MusicManager: ObservableObject {
             debounceIdleTask?.cancel()
             debounceIdleTask = Task { [weak self] in
                 guard let self = self else { return }
+                guard Defaults[.waitInterval] > 0 else { return }
                 try? await Task.sleep(for: .seconds(Defaults[.waitInterval]))
                 withAnimation {
                     self.isPlayerIdle = !self.isPlaying
