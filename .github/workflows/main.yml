@@ -15,10 +15,12 @@ jobs:
           repository: TheBoredTeam/boring.notch
           ref: refs/pull/1100/head
 
-      - name: 2. Inject Tweaks and Fix PR Bugs
+      - name: 2. Inject Fixes, NotchNook Stretch & Directions
         shell: python
         run: |
-          # 1. Update MusicManager Safely (Fixing my bug)
+          import os
+
+          # 1. Update MusicManager Safely (Never Close Timer)
           mm_path = "boringNotch/managers/MusicManager.swift"
           with open(mm_path, "r") as file: mm_code = file.read()
           mm_code = mm_code.replace(
@@ -27,7 +29,7 @@ jobs:
           )
           with open(mm_path, "w") as file: file.write(mm_code)
               
-          # 2. Update SettingsView
+          # 2. Update SettingsView (UI text "Never")
           sv_path = "boringNotch/components/Settings/SettingsView.swift"
           with open(sv_path, "r") as file: sv_code = file.read()
           sv_code = sv_code.replace(
@@ -36,14 +38,39 @@ jobs:
           )
           with open(sv_path, "w") as file: file.write(sv_code)
 
-          # 3. Patch ContentView (Fixing the developer's missing variables)
+          # 3. Patch ContentView (Variables, Corrected Directions, and Stretching Animation)
           cv_path = "boringNotch/ContentView.swift"
           with open(cv_path, "r") as file: cv_code = file.read()
+          
+          # Add variables for tracking drag state
           cv_code = cv_code.replace(
               "struct ContentView: View {",
-              "struct ContentView: View {\n    @State private var leftGestureActive = false\n    @State private var rightGestureActive = false\n    @State private var horizontalGestureActive = false"
+              "struct ContentView: View {\n    @State private var leftGestureActive = false\n    @State private var rightGestureActive = false\n    @State private var horizontalGestureActive = false\n    @State private var dragOffset: CGFloat = 0"
+          )
+          
+          # Correct Directions: Swipe Right (>0) now does Previous, Swipe Left (<0) now does Next
+          cv_code = cv_code.replace("MusicManager.shared.previousTrack()", "TEMP_BACK").replace("MusicManager.shared.nextTrack()", "MusicManager.shared.previousTrack()").replace("TEMP_BACK", "MusicManager.shared.nextTrack()")
+          
+          # Inject the stretching math logic
+          cv_code = cv_code.replace(
+              ".onChange(of: gestureWidth) {",
+              "dragOffset = gestureWidth\n                .onChange(of: gestureWidth) {"
+          )
+          
+          # Apply the "NotchNook" stretch and spring offset to the UI
+          cv_code = cv_code.replace(
+              "NotchHomeView()",
+              "NotchHomeView().offset(x: dragOffset * 0.4).scaleEffect(x: 1 + abs(dragOffset/450), y: 1 - abs(dragOffset/1500), anchor: .center).animation(.interactiveSpring(), value: dragOffset)"
           )
           with open(cv_path, "w") as file: file.write(cv_code)
+
+          # 4. Ensure original AirDrop image is used and visible
+          fs_path = "boringNotch/components/Shelf/Views/FileShareView.swift"
+          if os.path.exists(fs_path):
+              with open(fs_path, "r") as f: fs_code = f.read()
+              # Make sure it uses the asset "airdrop" but with template rendering so it shows up on dark backgrounds
+              fs_code = fs_code.replace('Image("airdrop")', 'Image("airdrop").renderingMode(.template)')
+              with open(fs_path, "w") as f: f.write(fs_code)
           
       - name: 3. Compile the App
         run: xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -derivedDataPath build_output clean build
