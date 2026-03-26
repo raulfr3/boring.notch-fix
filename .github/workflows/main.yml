@@ -45,7 +45,7 @@ jobs:
               file.write(sv_code)
           
       - name: 3. Compile the App
-        run: xcodebuild -project boringNotch.xcodeproj -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -derivedDataPath build_output clean build
+        run: xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -derivedDataPath build_output clean build
           
       - name: 4. Zip the App
         run: |
