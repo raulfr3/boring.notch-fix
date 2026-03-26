@@ -10,34 +10,39 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: 1. Download the Gesture update
+        uses: actions/checkout@v4
+        with:
+          repository: TheBoredTeam/boring.notch
+          ref: refs/pull/1100/head
+
+      - name: 2. Inject your Tweaks
+        shell: python
         run: |
-          git clone https://github.com/TheBoredTeam/boring.notch.git .
-          git fetch origin pull/1100/head:gestures
-          git checkout gestures
+          # 1. Update MusicManager
+          mm_path = "boringNotch/managers/MusicManager.swift"
+          with open(mm_path, "r") as file:
+              mm_code = file.read()
           
-      - name: 2. Inject your "Never Close" Tweaks
-        run: |
-          python3 -c '
-          import os
-
-          # Inject the timer guard into MusicManager
-          mm = "boringNotch/managers/MusicManager.swift"
-          with open(mm, "r") as f: content = f.read()
-          content = content.replace(
+          mm_code = mm_code.replace(
               "sleep(for: .seconds(Defaults[.waitInterval]))",
-              "guard Defaults[.waitInterval] > 0 else { return }; sleep(for: .seconds(Defaults[.waitInterval]))"
+              "guard Defaults[.waitInterval] > 0 else { return }\n        sleep(for: .seconds(Defaults[.waitInterval]))"
           )
-          with open(mm, "w") as f: f.write(content)
-
-          # Inject the "Never" text into SettingsView
-          sv = "boringNotch/components/Settings/SettingsView.swift"
-          with open(sv, "r") as f: content = f.read()
-          content = content.replace(
-              "Text(\"\\(waitInterval, specifier: \\\"%.0f\\\") sec\")",
-              "(waitInterval == 0 ? Text(\"Never\") : Text(\"\\(waitInterval, specifier: \\\"%.0f\\\") sec\"))"
+          
+          with open(mm_path, "w") as file:
+              file.write(mm_code)
+              
+          # 2. Update SettingsView
+          sv_path = "boringNotch/components/Settings/SettingsView.swift"
+          with open(sv_path, "r") as file:
+              sv_code = file.read()
+              
+          sv_code = sv_code.replace(
+              'Text("\\(waitInterval, specifier: "%.0f") sec")',
+              '(waitInterval == 0 ? Text("Never") : Text("\\(waitInterval, specifier: "%.0f") sec"))'
           )
-          with open(sv, "w") as f: f.write(content)
-          '
+          
+          with open(sv_path, "w") as file:
+              file.write(sv_code)
           
       - name: 3. Compile the App
         run: xcodebuild -project boringNotch.xcodeproj -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -derivedDataPath build_output clean build
