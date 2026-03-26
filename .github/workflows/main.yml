@@ -15,33 +15,35 @@ jobs:
           repository: TheBoredTeam/boring.notch
           ref: refs/pull/1100/head
 
-      - name: 2. Inject your Tweaks
+      - name: 2. Inject Tweaks and Fix PR Bugs
         shell: python
         run: |
-          # 1. Update MusicManager Safely
+          # 1. Update MusicManager Safely (Fixing my bug)
           mm_path = "boringNotch/managers/MusicManager.swift"
-          with open(mm_path, "r") as file:
-              mm_code = file.read()
-          
+          with open(mm_path, "r") as file: mm_code = file.read()
           mm_code = mm_code.replace(
-              "sleep(for: .seconds(Defaults[.waitInterval]))",
-              "guard Defaults[.waitInterval] > 0 else { return }\n        sleep(for: .seconds(Defaults[.waitInterval]))"
+              "try? await Task.sleep(for: .seconds(Defaults[.waitInterval]))",
+              "guard Defaults[.waitInterval] > 0 else { return }\n        try? await Task.sleep(for: .seconds(Defaults[.waitInterval]))"
           )
-          
-          with open(mm_path, "w") as file:
-              file.write(mm_code)
+          with open(mm_path, "w") as file: file.write(mm_code)
               
-          # 2. Update SettingsView Safely
+          # 2. Update SettingsView
           sv_path = "boringNotch/components/Settings/SettingsView.swift"
-          with open(sv_path, "r") as file:
-              sv_code = file.read()
-              
-          old_text = 'Text("\\(waitInterval, specifier: "%.0f") sec")'
-          new_text = 'Group { if waitInterval == 0 { Text("Never") } else { Text("\\(waitInterval, specifier: "%.0f") sec") } }'
-          sv_code = sv_code.replace(old_text, new_text)
-          
-          with open(sv_path, "w") as file:
-              file.write(sv_code)
+          with open(sv_path, "r") as file: sv_code = file.read()
+          sv_code = sv_code.replace(
+              'Text("\\(waitInterval, specifier: "%.0f") sec")',
+              'Group { if waitInterval == 0 { Text("Never") } else { Text("\\(waitInterval, specifier: "%.0f") sec") } }'
+          )
+          with open(sv_path, "w") as file: file.write(sv_code)
+
+          # 3. Patch ContentView (Fixing the developer's missing variables)
+          cv_path = "boringNotch/ContentView.swift"
+          with open(cv_path, "r") as file: cv_code = file.read()
+          cv_code = cv_code.replace(
+              "struct ContentView: View {",
+              "struct ContentView: View {\n    @State private var leftGestureActive = false\n    @State private var rightGestureActive = false\n    @State private var horizontalGestureActive = false"
+          )
+          with open(cv_path, "w") as file: file.write(cv_code)
           
       - name: 3. Compile the App
         run: xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -derivedDataPath build_output clean build
